@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 
 import com.proyecto.GestionCursos.model.Categoria;
 import com.proyecto.GestionCursos.model.Curso;
-import com.proyecto.GestionCursos.model.RolEnum;
 import com.proyecto.GestionCursos.repository.CategoriaRepository;
 import com.proyecto.GestionCursos.repository.CursoRepository;
 
@@ -17,13 +16,11 @@ public class CursoService {
 
     private final CursoRepository cursoRepository;
     private final CategoriaRepository categoriaRepository;
-    private final UsuarioRolService usuarioRolService;
 
     
-    public CursoService(CursoRepository cursoRepository, CategoriaRepository categoriaRepository, UsuarioRolService usuarioRolService){
+    public CursoService(CursoRepository cursoRepository, CategoriaRepository categoriaRepository){
         this.cursoRepository = cursoRepository;
         this.categoriaRepository = categoriaRepository;
-        this.usuarioRolService = usuarioRolService;
     }
 
     //Para registrar un nuevo curso

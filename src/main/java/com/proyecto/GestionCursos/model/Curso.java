@@ -7,7 +7,6 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -19,7 +18,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -39,10 +37,10 @@ public class Curso {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_curso")
     private Long idCurso;
-    
-    //Se refiere al creador del curso
-    @Column(name = "id_usuario")
+
+    @Column(name = "id_usuario", nullable = false)
     private Long idUsuario;
+    
 
     //Nombre
     @Column(name = "nombre_curso", nullable = false, unique = true)
@@ -74,10 +72,7 @@ public class Curso {
     //@JsonManagedReference("curso-categoria") //Se añade para evitar un bucle infinito
     private List<Categoria> categorias = new ArrayList<>();
 
-    //Relacion con recurso
-    @OneToMany(mappedBy = "curso", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    //Inicializacion de la lista de recursos
-    private List<Recurso> recursos = new ArrayList<>();
+
 
     //
     @ElementCollection(fetch = FetchType.LAZY)
@@ -101,15 +96,6 @@ public class Curso {
         this.instructorIds.remove(instructorId);
     }
 
-    public void addRecurso(Recurso recurso){
-        this.recursos.add(recurso);
-        recurso.setCurso(this);
-    }
-
-    public void removeRecurso(Recurso recurso){
-        this.recursos.remove(recurso);
-        recurso.setCurso(null);
-    }
 
     /*/Para asignar la fecha
     @PrePersist
