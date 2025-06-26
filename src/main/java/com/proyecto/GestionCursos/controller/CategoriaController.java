@@ -1,6 +1,7 @@
 package com.proyecto.GestionCursos.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,10 +29,12 @@ public class CategoriaController {
     }
 
     //Endpoint para crear categoria
-    @PostMapping("/registro")
-    public ResponseEntity<?> crearCategoria(@RequestBody Categoria categoria){
+    @PostMapping
+    public ResponseEntity<?> crearCategoria(@RequestBody Map<String, String> payload){
         try {
-            Categoria nuevaCategoria = categoriaService.crearCategoria(categoria);
+            String nombreCategoria = payload.get("nombreCategoria");
+
+            Categoria nuevaCategoria = categoriaService.crearCategoria(nombreCategoria);
             return new ResponseEntity<>(nuevaCategoria, HttpStatus.CREATED);
 
         } catch (IllegalArgumentException e) {
@@ -64,9 +67,6 @@ public class CategoriaController {
     public ResponseEntity<?> obtenerTodasLasCategorias(){
         try {
             List<Categoria> categorias = categoriaService.obtenerTodasLasCategorias();
-            if (categorias.isEmpty()) {
-                return ResponseEntity.ok("No hay categorias disponibles");
-            }
             return ResponseEntity.ok(categorias);
 
         } catch (Exception e) {
@@ -76,9 +76,14 @@ public class CategoriaController {
     }
     //Endpoint para actualizar categoria 
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizarCategoria(@PathVariable Long id, @RequestBody Categoria categoriaActualizada){
+    public ResponseEntity<?> actualizarCategoria(@PathVariable Long id, @RequestBody Map<String, String> payload){
         try {
-            Categoria categoria = categoriaService.actualizarCategoria(id, categoriaActualizada);
+            String nuevoNombre = payload.get("nuevoNombre");
+            if (nuevoNombre == null || nuevoNombre.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El nuevo nombre es obligatorio"));
+
+            }
+            Categoria categoria = categoriaService.actualizarCategoria(id, nuevoNombre);
             return ResponseEntity.ok(categoria);
 
         } catch (IllegalArgumentException e) {
@@ -99,7 +104,7 @@ public class CategoriaController {
     public ResponseEntity<?> eliminarCategoria(@PathVariable Long id){
         try {
             categoriaService.eliminarCategoria(id);
-            return ResponseEntity.ok("Categoria eliminada correctamente");
+            return ResponseEntity.noContent().build();
 
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -115,10 +120,6 @@ public class CategoriaController {
     public ResponseEntity<?> buscarCategoriasPorNombre(@RequestParam String nombre){
         try {
             List<Categoria> categorias = categoriaService.buscarCategoriasPorNombre(nombre);
-            if (categorias.isEmpty()) {
-                return ResponseEntity.ok("No hay coincidencias con el nombre " + nombre);
-                
-            }
             return ResponseEntity.ok(categorias);
 
         } catch (Exception e) {

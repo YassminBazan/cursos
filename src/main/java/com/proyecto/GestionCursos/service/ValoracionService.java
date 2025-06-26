@@ -49,8 +49,6 @@ public class ValoracionService {
         Curso cursoAValorar = cursoRepository.findById(idCurso)
             .orElseThrow(() -> new IllegalArgumentException("El curso con ID " + idCurso + " no existe."));
 
-
-        
         Valoracion nuevaValoracion = new Valoracion();
         nuevaValoracion.setCurso(cursoAValorar);
         nuevaValoracion.setIdUsuario(idUsuario);
@@ -62,7 +60,7 @@ public class ValoracionService {
     }
 
     public Optional<Valoracion> obtenerValoracionPorId(Long idValoracion){
-        return valoracionRepository.findByIdValoracion(idValoracion);
+        return valoracionRepository.findById(idValoracion);
     }
 
     public List<Valoracion> obtenerValoracionPorUsuario(Long idUsuario){
@@ -89,7 +87,7 @@ public class ValoracionService {
             throw new IllegalArgumentException("El comentario no puede exceder los 1000 caracteres.");
         }
 
-        Optional<Valoracion> valoracionOpt = valoracionRepository.findByIdValoracion(idValoracion);
+        Optional<Valoracion> valoracionOpt = valoracionRepository.findById(idValoracion);
 
         
         if (valoracionOpt.isEmpty()) {

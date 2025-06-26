@@ -12,6 +12,10 @@ import java.util.List;
 @Repository
 public interface CategoriaRepository extends JpaRepository<Categoria, Long>{
 
+    //Método para buscar categoria por id
+    Optional<Categoria> findById(Long idCategoria);
+
+    boolean existsById(Long idCategoria);
 
     //Método para buscar una categoria por el nombre 
     Optional<Categoria> findByNombreCategoriaIgnoreCase(String nombreCategoria);

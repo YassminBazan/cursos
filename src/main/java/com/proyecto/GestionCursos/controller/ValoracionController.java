@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,7 +24,6 @@ import lombok.AllArgsConstructor;
 @RequestMapping("/api/v1/valoraciones")
 public class ValoracionController {
 
-    @Autowired
     private final ValoracionService valoracionService;
 
     //Endpoint para crear
@@ -45,7 +44,7 @@ public class ValoracionController {
     }
 
     //Endpoint para actualizar
-    @PostMapping("/{id_valoracion}")
+    @PutMapping("/{id_valoracion}")
     public ResponseEntity<?> actualizarValoracion(@PathVariable Long idValoracion,  @RequestBody Map<String, Object> payload){
 
      Long idUsuarioQueActualiza = ((Number) payload.get("idUsuario")).longValue();
@@ -70,14 +69,14 @@ public class ValoracionController {
     }
 
     //Enpoint para obtener todas las valoraciones de un usuario 
-    @GetMapping("/{idUsuario}")
+    @GetMapping("/usuario/{idUsuario}")
     public ResponseEntity<List<Valoracion>> obtenerValoracionesPorUsuario(@PathVariable Long idUsuario){
         List<Valoracion> valoraciones = valoracionService.obtenerValoracionPorUsuario(idUsuario);
         return ResponseEntity.ok(valoraciones);
     }
 
     //Endpoiny para obtener todas las valoraciones de un curso
-        @GetMapping("/{idCurso}")
+    @GetMapping("/curso/{idCurso}")
     public ResponseEntity<List<Valoracion>> obtenerValoracionesPorCurso(@PathVariable Long idCurso){
         List<Valoracion> valoraciones = valoracionService.obtenerValoracionPorCurso(idCurso);
         return ResponseEntity.ok(valoraciones);

@@ -25,12 +25,19 @@ public class CategoriaService {
 
     //Crear categoria
     @Transactional
-    public Categoria crearCategoria(Categoria categoria){
-        Optional<Categoria> categoriaExistente = categoriaRepository.findByNombreCategoriaIgnoreCase(categoria.getNombreCategoria());
+    public Categoria crearCategoria(String nombreCategoria){
+        if (nombreCategoria == null || nombreCategoria.isBlank()) {
+            throw new IllegalArgumentException("El nombre de la categoria es obligatorio");
+        }
+
+        Optional<Categoria> categoriaExistente = categoriaRepository.findByNombreCategoriaIgnoreCase(nombreCategoria);
         if (categoriaExistente.isPresent()) {
             throw new IllegalArgumentException("El nombre de la categoria ya existe");    
         }
-        return categoriaRepository.save(categoria);
+
+        Categoria nuevaCategoria = new Categoria();
+        nuevaCategoria.setNombreCategoria(nombreCategoria);
+        return categoriaRepository.save(nuevaCategoria);
     }
 
     @Transactional(readOnly = true)
@@ -55,14 +62,21 @@ public class CategoriaService {
     }
 
     @Transactional
-    public Categoria actualizarCategoria(Long id, Categoria categoriaActualizada){
-        Categoria categoriaExistente = obtenerCategoriaPorId(id);
+    public Categoria actualizarCategoria(Long id, String nuevoNombre){
 
-        Optional<Categoria> otraCategoria = categoriaRepository.findByNombreCategoriaIgnoreCase(categoriaActualizada.getNombreCategoria());
+        if (nuevoNombre == null || nuevoNombre.isBlank()) {
+            throw new IllegalArgumentException("El nuevo nombre no puede estar vacio");
+        }
+
+        Categoria categoriaExistente = categoriaRepository.findById(id)
+            .orElseThrow(()-> new RuntimeException("El id ingresado no coincide con ninguna categoria"));
+
+        Optional<Categoria> otraCategoria = categoriaRepository.findByNombreCategoriaIgnoreCase(nuevoNombre);
+
         if (otraCategoria.isPresent() && !otraCategoria.get().getIdCategoria().equals(id)) {
             throw new IllegalArgumentException("El nombre de la categoria ya existe");
         }
-        categoriaExistente.setNombreCategoria(categoriaActualizada.getNombreCategoria());
+        categoriaExistente.setNombreCategoria(nuevoNombre);
         return categoriaRepository.save(categoriaExistente);   
     }
 

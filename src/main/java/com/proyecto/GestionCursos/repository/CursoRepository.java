@@ -8,36 +8,24 @@ import org.springframework.stereotype.Repository;
 
 import com.proyecto.GestionCursos.model.Curso;
 
+
 @Repository
-public interface CursoRepository extends JpaRepository<Curso, Long>{
+public interface CursoRepository extends JpaRepository<Curso, Long> {
 
+    //Devuelve curso por id
+    Optional<Curso> findById(Long idCurso);
 
-    //Devuelve una lista de los cursos que coincidan con el nombre que ingreso (no es key sensitive)
-    List<Curso> findByNombreCursoContainingIgnoreCase(String nombreCurso);
+    //Devuelve curso por nombre 
+    Optional<Curso> findByNombreCurso(String nombreCurso);
 
-    //Devuelve una lista de cursos que corresponden a una categoria, se indica a JPA que navegue en la lista categorias y acceda a nombreCategoria 
-    List<Curso> findByCategorias_NombreCategoriaIgnoreCase(String nombreCategoria);
+    //Devuelve una lista de cursos por categoria
+    List<Curso> findByCategoria(String nombreCategoria);
 
-    //Devuelve los cursos asignados a un instructor, contains es para buscar si el instructorId esta dentro de la coleccion instructorIds
-    List<Curso> findByInstructorIdsContains(Long instructorId);
-
-    //Devuelve la lista de los cursos a cargo de los gerentes
-    List<Curso> findByIdUsuario(Long idUsuario);
-
-    //Método para buscar un curso especifico, Optional indica que puede o no existir el objeto
-    Optional<Curso> findByNombreCursoIgnoreCase(String nombreCurso);
-
-    //Devuelve un curso por id
-    Optional<Curso> findByIdCurso(Long idCurso);
-
-    //Métodos exists
-    //Nombre ignorando minúsculas y mayúsculas
-    boolean existsByNombreCursoIgnoreCase(String nombreCurso);
-
-    //ID
-    boolean existsByIdCurso(Long idCurso);
-
+    //Devuelve una lista de cursos de una categoria 
     List<Curso> findByCategorias_IdCategoria(Long categoriaId);
+
+
+
 
 
 }

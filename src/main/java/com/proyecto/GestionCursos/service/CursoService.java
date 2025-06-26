@@ -1,6 +1,10 @@
 package com.proyecto.GestionCursos.service;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -8,164 +12,141 @@ import com.proyecto.GestionCursos.model.Categoria;
 import com.proyecto.GestionCursos.model.Curso;
 import com.proyecto.GestionCursos.repository.CategoriaRepository;
 import com.proyecto.GestionCursos.repository.CursoRepository;
+import com.proyecto.GestionCursos.repository.InstructorReplicadoRepository;
+import com.proyecto.GestionCursos.repository.UsuarioValidoRepository;
 
-import org.springframework.transaction.annotation.Transactional;
+import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 
+@AllArgsConstructor
 @Service
 public class CursoService {
 
+    //Dependencias      
     private final CursoRepository cursoRepository;
     private final CategoriaRepository categoriaRepository;
+    private final UsuarioValidoRepository usuarioValidoRepository;
+    private final InstructorReplicadoRepository instructorReplicadoRepository;
 
-    
-    public CursoService(CursoRepository cursoRepository, CategoriaRepository categoriaRepository){
-        this.cursoRepository = cursoRepository;
-        this.categoriaRepository = categoriaRepository;
+
+    //Para crear un curso
+    @Transactional
+    public Curso crearCurso(String nombreCurso, String descripcion, double valorCurso, Long idCreador, Set<Long> idsCategorias){
+        if (nombreCurso == null || nombreCurso.isBlank()) {
+            throw new IllegalArgumentException("El nombre es obligatorio");
+        }
+
+        if (descripcion != null && descripcion.length() > 1000) {
+            throw new IllegalArgumentException("La descripcion no puede exceder los 1000 caracteres");
+        }
+
+        if (valorCurso < 1000) {
+            throw new IllegalArgumentException("El valor del curso debe ser mayor o igual $1000");
+        }
+
+
+        //Validacion para saber si el creador existe en la tabla replicada
+        if(!usuarioValidoRepository.existsById(idCreador)){
+            throw new IllegalArgumentException("El usuario creador no existe");
+        }
+        //Validacion de las categorias 
+        Set<Categoria> categorias = idsCategorias.stream()
+                .map(idCat -> categoriaRepository.findById(idCat)
+                    .orElseThrow(() -> new IllegalArgumentException("La categoria no existe")))
+                .collect(Collectors.toSet());
+        if (categorias.isEmpty()) {
+            throw new IllegalArgumentException("Ingrese al menos una categoria valida");
+        }
+
+        Curso nuevoCurso = new Curso();
+        nuevoCurso.setNombreCurso(nombreCurso);
+        nuevoCurso.setDescripcion(descripcion);
+        nuevoCurso.setValorCurso(valorCurso);
+        nuevoCurso.setIdUsuario(idCreador); // Asigna el creador
+        nuevoCurso.setFechaCreacion(LocalDate.now());
+        nuevoCurso.setCategorias(categorias); // Asigna el conjunto de entidades Categoria
+
+        return cursoRepository.save(nuevoCurso);
     }
 
-    //Para registrar un nuevo curso
-    @Transactional //Indica que los métodos se van hacer dentro de una transaccion para garantizar la integridad de datos 
-    public Curso crearCurso(Curso curso, Long idCreador){
-        if (!usuarioRolService.tieneRol(idCreador, RolEnum.GERENTE_DE_CURSOS)) {
-            throw new SecurityException("Usuario ingresado no tiene permiso para crear cursos"); 
-        }
-
-        if (cursoRepository.existsByNombreCursoIgnoreCase(curso.getNombreCurso())) {
-            throw new IllegalArgumentException("El nombre " + curso.getNombreCurso() + "ya existe");  
-        }
-        
-    //Verificacion existencia de categoria
-        if (curso.getCategorias() != null) {
-            for(Categoria categoria : curso.getCategorias()){
-                if (categoria.getIdCategoria() == null || !categoriaRepository.existsById(categoria.getIdCategoria())) {
-                    throw new IllegalArgumentException("Categoria no existe");
-                    
-                }
-            }
-        }
-
-    //Verificacion de roles para los Ids de instructores
-        if(curso.getInstructorIds() != null){
-            for(Long instructorId : curso.getInstructorIds()){
-                if (!usuarioRolService.tieneRol(instructorId, RolEnum.INSTRUCTOR)) {
-                    throw new IllegalArgumentException("El usuario asignado a curso no tiene permisos");
-            }
-        }
-    }
-        curso.setIdUsuario(idCreador);
-        
-        return cursoRepository.save(curso);
+    //Para obtener curso por id
+    public Optional<Curso> obtenerCursoPorId(Long idCurso){
+        return cursoRepository.findById(idCurso);
     }
 
-
-
-
-    @Transactional(readOnly = true)
+    //Para obtener todos los cursos
     public List<Curso> obtenerTodosLosCursos(){
         return cursoRepository.findAll();
     }
 
-    
-    @Transactional(readOnly = true)
-    public Curso obtenerCursoPorId(Long id) {
-    return cursoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Curso no encontrado")); 
-    }
-
-    //Actualizar cursos
+    //Para eliminar curso
     @Transactional
-    public Curso actualizarCurso(Long id, Curso cursoActualizado, Long idUsuario){
-        if (!usuarioRolService.tieneRol(idUsuario, RolEnum.GERENTE_DE_CURSOS)) {
-            throw new SecurityException("El usuario no tiene permiso para actualizar cursos");
+    public void eliminarCurso(Long idCurso){
+        if (!cursoRepository.existsById(idCurso)) {
+            throw new IllegalArgumentException("El curso ingresado no fue encontrado" );
         }
-
-        Curso cursoExistente = cursoRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("El ID no se encuentra"));
-
-        if (!cursoExistente.getNombreCurso().equalsIgnoreCase(cursoActualizado.getNombreCurso()) &&
-        cursoRepository.existsByNombreCursoIgnoreCase(cursoActualizado.getNombreCurso())){
-            throw new IllegalArgumentException("El nombre del curso ya existe");
-        }
-
-        cursoExistente.setNombreCurso(cursoActualizado.getNombreCurso());
-        cursoExistente.setDescripcionCurso(cursoActualizado.getDescripcionCurso());
-        cursoExistente.setValorCurso(cursoActualizado.getValorCurso());
-
-        //Para actualizar categoria
-        if (cursoActualizado.getCategorias() != null) {
-            for(Categoria nuevaCategoria : cursoActualizado.getCategorias()){
-                if (nuevaCategoria.getIdCategoria() == null || !categoriaRepository.existsById(nuevaCategoria.getIdCategoria())) {
-                    throw new IllegalArgumentException("La categoria ingresada no es valida");
-                }
-            }
-            cursoExistente.setCategorias(cursoActualizado.getCategorias());
-        }
-
-        return cursoRepository.save(cursoExistente);
+        cursoRepository.deleteById(idCurso);
     }
 
-
+    //Para actualizar un curso
     @Transactional
-    public void eliminarCurso(Long id, Long idUsuario){
-        if (!usuarioRolService.tieneRol(idUsuario, RolEnum.GERENTE_DE_CURSOS)) {
-            throw new SecurityException("El usuario no tiene permiso para eliminar cursos");
+    public Optional<Curso> actualizarCurso(Long idCurso, String nombreCurso, String descripcion, double valorCurso){
+
+        if (nombreCurso == null || nombreCurso.isBlank()) {
+            throw new IllegalArgumentException("El nombre es obligatorio");
         }
 
-        if (!cursoRepository.existsById(id)) {
-            throw new RuntimeException("Curso no encontrado");
+        if (descripcion != null && descripcion.length() > 1000) {
+            throw new IllegalArgumentException("La descripcion no puede exceder los 1000 caracteres");
         }
-        cursoRepository.deleteById(id);
+
+        if (valorCurso < 1000) {
+            throw new IllegalArgumentException("El valor del curso debe ser mayor o igual $1000");
+        }
+
+        Optional<Curso> curso = cursoRepository.findById(idCurso);
+
+        if (curso.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Curso cursoExistente = curso.get();
+
+        cursoExistente.setNombreCurso(nombreCurso);
+        cursoExistente.setDescripcion(descripcion);
+        cursoExistente.setValorCurso(valorCurso);
+
+        Curso cursoActualizado = cursoRepository.save(cursoExistente);
+        return Optional.of(cursoActualizado);
+
     }
 
 
-    @Transactional(readOnly = true)
-    public List<Curso> buscarCursoPorNombre(String nombre){
-        return cursoRepository.findByNombreCursoContainingIgnoreCase(nombre);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Curso> buscarPorCategoria(String nombreCategoria){
-        return cursoRepository.findByCategorias_NombreCategoriaIgnoreCase(nombreCategoria);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Curso> buscarCursoPorInstructor(Long instructorId){
-        return cursoRepository.findByInstructorIdsContains(instructorId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Curso> buscarCursosPorCreador(Long creadorId){
-        return cursoRepository.findByIdUsuario(creadorId);
-    }
-
-
-    //Asignacion de instructor
+    //Asignacion de instructores 
     @Transactional
-    public Curso asignarInstructor(Long cursoId, Long instructorId, Long idUsuario){
-        if (!usuarioRolService.tieneRol(idUsuario, RolEnum.GERENTE_DE_CURSOS)) {
-            throw new SecurityException("El usuario no tiene permiso para asignar instructores");
-        }
-        if(!usuarioRolService.tieneRol(instructorId, RolEnum.INSTRUCTOR)){
-            throw new IllegalArgumentException("El usuario asignado no cumple con requisitos");
+    public Curso asignarInstructor(Long idCurso, Long idInstructor){
+        //Valida que el instru exista en la tabla replicada
+        if(!instructorReplicadoRepository.existsById(idInstructor)){
+            throw new IllegalArgumentException("Ingrese un instructor valido");
         }
 
-        Curso curso = cursoRepository.findById(cursoId)
-                .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
-            
-        curso.addInstructor(instructorId);
+        Curso curso = cursoRepository.findById(idCurso)
+                .orElseThrow(() -> new IllegalArgumentException("Ingrese un curso valido"));
+
+        curso.getIdsInstructores().add(idInstructor);
         return cursoRepository.save(curso);
     }
 
-    //Desvincular instructor
+    //Desvincular instructores
     @Transactional
-    public Curso desvincularInstructor(Long cursoId, Long instructorId, Long idUsuario){
-        if (!usuarioRolService.tieneRol(idUsuario, RolEnum.GERENTE_DE_CURSOS)) {
-            throw new SecurityException("El usuario no tiene permiso para desvincular instructores");
-        }
-        Curso curso = cursoRepository.findById(cursoId)
-                .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
-        curso.removeInstructor(instructorId);
+    public Curso desvincularInstructor(Long idCurso, Long idInstructor){
+        
+        Curso curso = cursoRepository.findById(idCurso)
+                .orElseThrow(() -> new IllegalArgumentException("Ingrese un curso valido"));
+
+        curso.getIdsInstructores().remove(idInstructor);
         return cursoRepository.save(curso);
     }
+
 
 }

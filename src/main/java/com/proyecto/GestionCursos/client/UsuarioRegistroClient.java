@@ -19,12 +19,11 @@ public class UsuarioRegistroClient {
     private final String registroBaseUrl;
 
     public List<Long> obtenerUsuariosActivos(){
-        String url = registroBaseUrl + "ids/activos";
+        String url = registroBaseUrl + "/ids/activos";
 
         System.out.println("Llamando a: " + url + " para sincronizar IDs de usuarios."); // Para depuración
 
          try {
-            // 2. Realizar la llamada GET. Le decimos a RestTemplate que esperamos
             // una respuesta que se pueda convertir en un array de Long (Long[]).
             ResponseEntity<Long[]> response = restTemplate.getForEntity(url, Long[].class);
 
@@ -47,9 +46,26 @@ public class UsuarioRegistroClient {
             // que no debe hacer nada y que debe intentarlo de nuevo en el próximo ciclo.
             // ¡Esto es CRUCIAL para no borrar nuestra tabla de réplica si el otro servicio está caído!
             return Collections.emptyList();
+
+
+            
         }
 
     }
     
-
+    public List<Long> obtenerIdsDeInstructoresActivos() {
+        String url = registroBaseUrl + "/ids/instructores"; // Llama al nuevo endpoint
+        try {
+            ResponseEntity<Long[]> response = restTemplate.getForEntity(url, Long[].class);
+            if (response.getBody() != null) {
+                return Arrays.asList(response.getBody());
+            }
+            return Collections.emptyList();
+        } catch (RestClientException ex) {
+            System.err.println("Error al obtener IDs de instructores activos desde el servicio de registro: " + ex.getMessage());
+            return Collections.emptyList();
+        }
+    }
 }
+
+

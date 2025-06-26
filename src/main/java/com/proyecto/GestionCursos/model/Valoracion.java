@@ -36,6 +36,8 @@ public class Valoracion {
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDate fechaCreacion;
 
+
+    //Se hace la relacion con curso
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_curso", nullable = false)
     private Curso curso;

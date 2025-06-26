@@ -12,7 +12,7 @@ import com.proyecto.GestionCursos.model.Valoracion;
 public interface ValoracionRepository extends JpaRepository<Valoracion, Long> {
 
     //Devuelve una valoracion por id
-    Optional<Valoracion> findByIdValoracion(Long idValoracion);
+    Optional<Valoracion> findById(Long idValoracion);
 
     //Devuelve una lista de valoraciones de un usuario
     List<Valoracion> findByIdUsuario(Long idUsuario);
