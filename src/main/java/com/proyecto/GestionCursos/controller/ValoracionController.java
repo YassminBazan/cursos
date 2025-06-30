@@ -44,7 +44,7 @@ public class ValoracionController {
     }
 
     //Endpoint para actualizar
-    @PutMapping("/{id_valoracion}")
+    @PutMapping("/{idValoracion}")
     public ResponseEntity<?> actualizarValoracion(@PathVariable Long idValoracion,  @RequestBody Map<String, Object> payload){
 
      Long idUsuarioQueActualiza = ((Number) payload.get("idUsuario")).longValue();
@@ -81,6 +81,16 @@ public class ValoracionController {
         List<Valoracion> valoraciones = valoracionService.obtenerValoracionPorCurso(idCurso);
         return ResponseEntity.ok(valoraciones);
     }
+
+    //Endpoiny para obtener todas las valoraciones 
+    @GetMapping
+    public ResponseEntity<List<Valoracion>> obtenerTodasLasValoraciones(){
+        List<Valoracion> valoraciones = valoracionService.obtenerTodasLasValoraciones();
+        return ResponseEntity.ok(valoraciones);
+    }
+
+
+    
 
 } 
 

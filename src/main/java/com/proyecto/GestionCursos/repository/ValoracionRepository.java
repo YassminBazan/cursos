@@ -18,7 +18,7 @@ public interface ValoracionRepository extends JpaRepository<Valoracion, Long> {
     List<Valoracion> findByIdUsuario(Long idUsuario);
 
     //Devuelve una lista de valoraciones por curso
-    List<Valoracion> findByIdCurso(Long idCurso);
+    List<Valoracion> findByCurso_IdCurso(Long idCurso);
 
     
 

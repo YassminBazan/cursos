@@ -33,6 +33,10 @@ public class ValoracionService {
         }
         if (puntuacion == null) {
             throw new IllegalArgumentException("La puntuación es obligatoria.");
+
+        }
+        if (puntuacion < 1 ||puntuacion > 6) {
+            throw new IllegalArgumentException("La puntuación debe estar entre 1 y 5.");
         }
         if (puntuacion < 1 || puntuacion > 5) {
             throw new IllegalArgumentException("La puntuación debe estar entre 1 y 5.");
@@ -59,6 +63,10 @@ public class ValoracionService {
         return valoracionRepository.save(nuevaValoracion);
     }
 
+    //Obtener todas las valoraciones
+    public List<Valoracion> obtenerTodasLasValoraciones(){
+        return valoracionRepository.findAll();
+    }
     public Optional<Valoracion> obtenerValoracionPorId(Long idValoracion){
         return valoracionRepository.findById(idValoracion);
     }
@@ -71,7 +79,7 @@ public class ValoracionService {
         if (!cursoRepository.existsById(idCurso)) {
             throw new IllegalArgumentException("No se pueden obtener valoraciones de un curso que no existe.");
         }
-        return valoracionRepository.findByIdCurso(idCurso);
+        return valoracionRepository.findByCurso_IdCurso(idCurso);
     }
 
     @Transactional

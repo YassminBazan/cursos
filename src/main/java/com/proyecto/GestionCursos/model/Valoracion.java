@@ -2,6 +2,8 @@ package com.proyecto.GestionCursos.model;
 
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -38,6 +40,7 @@ public class Valoracion {
 
 
     //Se hace la relacion con curso
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_curso", nullable = false)
     private Curso curso;

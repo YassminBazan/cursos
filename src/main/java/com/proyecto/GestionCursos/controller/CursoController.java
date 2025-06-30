@@ -35,7 +35,7 @@ public class CursoController {
         String nombre = (String) payload.get("nombreCurso");
         String descripcion = (String) payload.get("descripcion");
         double valor = ((Number) payload.get("valorCurso")).doubleValue();
-        Long idCreador = ((Number) payload.get("idUsuarioCreador")).longValue();
+        Long idCreador = ((Number) payload.get("idCreador")).longValue();
             
         List<Integer> idsCategoriasInt = (List<Integer>) payload.get("idsCategorias");
         Set<Long> idsCategorias = idsCategoriasInt.stream().map(Integer::longValue).collect(Collectors.toSet());
@@ -79,7 +79,7 @@ public class CursoController {
     }
 
     //Endpoint para ASIGNAR INSTRUCTOR
-    @PostMapping("/{idCurso}/instructores")
+    @PostMapping("/{idCurso}/asignar")
     public ResponseEntity<?> asignarInstructor(@PathVariable Long idCurso, @RequestBody Map<String, Long> payload){
         Long idInstructor = payload.get("idInstructor");
         Curso cursoActualizado = cursoService.asignarInstructor(idCurso, idInstructor);
@@ -87,7 +87,7 @@ public class CursoController {
     }
 
     //Endpoint para DESVINCULAR INSTRUCTOR
-    @DeleteMapping("/{idCurso}/instructores/{idInstructor}")
+    @DeleteMapping("/{idCurso}/desvincular/{idInstructor}")
     public ResponseEntity<?> desvincularInstructor(@PathVariable Long idCurso, @PathVariable Long idInstructor){
         Curso cursoActualizado = cursoService.desvincularInstructor(idCurso, idInstructor);
         return ResponseEntity.ok(cursoActualizado);

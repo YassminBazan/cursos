@@ -4,19 +4,27 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
+
 @Component
 public class UsuarioRegistroClient {
 
+
     private final RestTemplate restTemplate;
+
     private final String registroBaseUrl;
+
+    public UsuarioRegistroClient(RestTemplate restTemplate, @Value("${servicio.registro.url}") String registroBaseUrl) {
+        this.restTemplate = restTemplate;
+        this.registroBaseUrl = registroBaseUrl;
+    }
+
 
     public List<Long> obtenerUsuariosActivos(){
         String url = registroBaseUrl + "/ids/activos";

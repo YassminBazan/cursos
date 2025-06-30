@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.proyecto.GestionCursos.model.Curso;
+import com.proyecto.GestionCursos.model.UsuarioValido;
 import com.proyecto.GestionCursos.model.Valoracion;
 import com.proyecto.GestionCursos.repository.CursoRepository;
 import com.proyecto.GestionCursos.repository.UsuarioValidoRepository;
@@ -39,6 +40,7 @@ public class ValoracionServiceTest {
     //Datos de prueba
     private Curso cursoDePrueba;
     private Valoracion valoracionDePrueba; 
+    private UsuarioValido usuarioValidoPrueba;
 
     //Método que se ejecuta antes de cada prueba para preparar el entorno
     @BeforeEach
@@ -47,6 +49,10 @@ public class ValoracionServiceTest {
         MockitoAnnotations.openMocks(this);
 
         //Preperacion de un objeto para los test
+
+        usuarioValidoPrueba = new UsuarioValido();
+        usuarioValidoPrueba.setIdUsuario(10L);
+
         cursoDePrueba = new Curso();
         cursoDePrueba.setIdCurso(1L);
         cursoDePrueba.setNombreCurso("Curso de Prueba");
@@ -56,23 +62,28 @@ public class ValoracionServiceTest {
         valoracionDePrueba.setCurso(cursoDePrueba);
         valoracionDePrueba.setIdUsuario(10L); 
         valoracionDePrueba.setPuntuacion(4);
+
     }
+
 
     @DisplayName("Test para crear una valoracion correctamente")
     @Test
     void testGuardarValoracionOk(){
         //Arrange 
         Long idUsuario = 10L;
-        Long idCurso = 1L; 
+        Long idCurso = 1L;
+        //Integer puntuacion = 4; 
+
 
         //Simulamos que los datos existen
         when(cursoRepository.findById(idCurso)).thenReturn(Optional.of(cursoDePrueba));
-        when(usuarioValidoRepository.existsById(idCurso)).thenReturn(true);
+        when(usuarioValidoRepository.existsById(idUsuario)).thenReturn(true);
+    
 
         //Simulacion metodo save
         when(valoracionRepository.save(any(Valoracion.class))).thenAnswer(invocation -> {
             Valoracion valo = invocation.getArgument(0);
-            valo.setIdValoracion(11L);
+            valo.setIdValoracion(100L);
             return valo;
         });
 
@@ -81,9 +92,10 @@ public class ValoracionServiceTest {
 
         // Assert (Verificar)
         assertThat(resultado).isNotNull();
-        assertThat(resultado.getIdValoracion()).isEqualTo(101L);
+        assertThat(resultado.getIdValoracion()).isEqualTo(100L);
         assertThat(resultado.getIdUsuario()).isEqualTo(idUsuario);
         assertThat(resultado.getCurso()).isEqualTo(cursoDePrueba);
+        assertThat(resultado.getPuntuacion()).isEqualTo(4);
         verify(valoracionRepository).save(any(Valoracion.class));
     }
 
@@ -144,7 +156,7 @@ public class ValoracionServiceTest {
         when(cursoRepository.existsById(idCurso)).thenReturn(true);
 
         //Simulacion de que si lo encuentra en el repositorio
-        when(valoracionRepository.findByIdCurso(idCurso)).thenReturn(lista);
+        when(valoracionRepository.findByCurso_IdCurso(idCurso)).thenReturn(lista);
         
         //Act
         List<Valoracion> resultado = valoracionService.obtenerValoracionPorCurso(idCurso);
@@ -156,7 +168,7 @@ public class ValoracionServiceTest {
 
         //Verificamos que se llamo al método
         verify(cursoRepository, times(1)).existsById(idCurso);
-        verify(valoracionRepository, times(1)).findByIdCurso(idCurso);
+        verify(valoracionRepository, times(1)).findByCurso_IdCurso(idCurso);
     }
 
     

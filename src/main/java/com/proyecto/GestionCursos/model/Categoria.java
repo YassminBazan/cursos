@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import jakarta.persistence.Column;
@@ -36,7 +37,9 @@ public class Categoria {
     private String nombreCategoria;
 
     //Se hace la relacion con curso
+
     @ManyToMany(mappedBy = "categorias", fetch = FetchType.LAZY)
+    @JsonIgnore
     //@JsonBackReference("curso-categoria")// para evitar bucle en postman
     private List<Curso> cursos = new ArrayList<>();
     

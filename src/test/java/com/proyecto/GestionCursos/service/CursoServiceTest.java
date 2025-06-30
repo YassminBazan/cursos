@@ -249,6 +249,7 @@ public class CursoServiceTest {
         //Assert
         //Verificacion del optional 
         assertThat(resultadoOpt).isEmpty();
+       
 
         //verificacion de que no se uso el metodo
         verify(cursoRepository, never()).save(any(Curso.class));
@@ -286,6 +287,8 @@ public class CursoServiceTest {
         //Verificacion del mensaje
         assertThat(exception.getMessage()).isEqualTo("El curso ingresado no fue encontrado");
     }
+
+    
 
     
 
