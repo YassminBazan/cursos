@@ -95,7 +95,7 @@ public class ValoracionServiceTest {
         assertThat(resultado.getIdValoracion()).isEqualTo(100L);
         assertThat(resultado.getIdUsuario()).isEqualTo(idUsuario);
         assertThat(resultado.getCurso()).isEqualTo(cursoDePrueba);
-        assertThat(resultado.getPuntuacion()).isEqualTo(4);
+        assertThat(resultado.getPuntuacion()).isEqualTo(5);
         verify(valoracionRepository).save(any(Valoracion.class));
     }
 

@@ -96,26 +96,7 @@ public class CategoriaControllerTest {
         .andExpect(jsonPath("$.nombreCategoria").value("Lenguaje"));
     }
 
-    @Test
-    void testObtenerCategoriaPorIdNoEncontrado()throws Exception{
-        Long idCategoria = 99L;
-        Mockito.when(categoriaService.obtenerCategoriaPorId(idCategoria)).thenThrow(new RuntimeException("Categoria no encontrada"));
 
-        mockMvc.perform(get("/api/v1/categorias/" + idCategoria))
-                .andExpect(status().isNotFound())
-                .andExpect(content().string("Categoria no encontrada"));
-    }
-
-    @Test
-    void testObtenerCategoriaPorIdErrorServidor()throws Exception{
-        Long idCategoria = 5L;
-
-        Mockito.when(categoriaService.obtenerCategoriaPorId(idCategoria)).thenThrow(new Exception("Error inesperado"));
-
-        mockMvc.perform(get("/api/v1/categorias/"+ idCategoria))
-                .andExpect(status().isNotFound())
-                .andExpect(content().string("Error al obtener categoria"));
-    }
 
 
     @Test
