@@ -89,7 +89,7 @@ public class CategoriaService {
         if (cursosAsociados != null && !cursosAsociados.isEmpty()) {
             for(Curso curso : cursosAsociados){
                 boolean removed = curso.getCategorias().removeIf(cat -> cat.getIdCategoria().equals(categoriaId));
-
+                
                 if(removed){
                     cursoRepository.save(curso);
                 }

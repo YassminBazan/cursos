@@ -1,9 +1,16 @@
 package com.proyecto.GestionCursos.service;
 
+public class Pruebas {
+
+}
+
+
+
+package com.proyecto.GestionCursos.service;
+
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,7 +26,6 @@ import org.mockito.MockitoAnnotations;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.proyecto.GestionCursos.model.Categoria;
@@ -49,8 +55,6 @@ public class CursoServiceTest {
     private CursoService cursoService;
 
     private Curso cursoPrueba;
-    private Curso cursoPrueba2;
-    List<Curso> listaCursos;
     
     //Método que se ejecuta antes de cada prueba para preparar el entorno
     @BeforeEach
@@ -66,15 +70,6 @@ public class CursoServiceTest {
         cursoPrueba.setNombreCurso("Python");
         cursoPrueba.setDescripcion("Curso Python para principiantes");
         cursoPrueba.setValorCurso(5000);
-
-        cursoPrueba2 = new Curso();
-        cursoPrueba2.setIdCurso(2L);
-        cursoPrueba2.setIdUsuario(11L);
-        cursoPrueba2.setNombreCurso("Java");
-        cursoPrueba2.setDescripcion("Curso Java para principiantes");
-        cursoPrueba2.setValorCurso(5000);
-
-        listaCursos = List.of(cursoPrueba, cursoPrueba2);
 
     }
 
@@ -122,211 +117,101 @@ public class CursoServiceTest {
     }
 
     @Test
-    @DisplayName("Debe lanzar excepción si el nombre del curso es null")
-    void testCrearCursoConNombreNull() {
-        Long idCreador = 1L;
-        when(usuarioValidoRepository.existsById(idCreador)).thenReturn(true);
+    @DisplayName("Crear curso con nombre nulo o vacío lanza excepción")
+    void testCrearCursoNombreInvalido() {
+        Long idCreador = 11L;
+        double valorCurso = 2000;
+        Set<Long> idsCategorias = Set.of(1L);
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            cursoService.crearCurso(null, "Descripción válida", 2000, idCreador, Set.of(1L));
+        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () -> {
+        cursoService.crearCurso(null, "desc", valorCurso, idCreador, idsCategorias);
         });
+        assertThat(ex1.getMessage()).isEqualTo("El nombre es obligatorio");
 
-        assertThat(exception.getMessage()).isEqualTo("El nombre es obligatorio");
+        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class, () -> {
+            cursoService.crearCurso("  ", "desc", valorCurso, idCreador, idsCategorias);
+        });
+        assertThat(ex2.getMessage()).isEqualTo("El nombre es obligatorio");
+
     }
 
     @Test
-    @DisplayName("Debe lanzar excepción si el nombre del curso es blanco")
-    void testCrearCursoConNombreBlanco() {
-        Long idCreador = 1L;
-        when(usuarioValidoRepository.existsById(idCreador)).thenReturn(true);
+    @DisplayName("Crear curso con descripción mayor a 1000 caracteres lanza excepción")
+    void testCrearCursoDescripcionMuyLarga() {
+        Long idCreador = 11L;
+        String nombreCurso = "Curso";
+        String descripcionLarga = Stream.generate(() -> "a").limit(1001).collect(Collectors.joining());
+        double valorCurso = 2000;
+        Set<Long> idsCategorias = Set.of(1L);
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            cursoService.crearCurso("   ", "Descripción válida", 2000, idCreador, Set.of(1L));
+        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () -> {
+            cursoService.crearCurso(nombreCurso, descripcionLarga, valorCurso, idCreador, idsCategorias);
         });
 
-        assertThat(exception.getMessage()).isEqualTo("El nombre es obligatorio");
+        assertThat(ex1.getMessage()).isEqualTo("La descripcion no puede exceder los 1000 caracteres");
+
     }
+
     @Test
-    @DisplayName("Debe permitir descripción null")
-    void testCrearCursoDescripcionNull() {
-        Long idCreador = 1L;
+    @DisplayName("Crear curso con valor menor a 1000 lanza excepción")
+    void testCrearCursoValorInvalido() {
+        Long idCreador = 11L;
+        String nombreCurso = "Curso";
+        String descripcion = "Desc";
+        Set<Long> idsCategorias = Set.of(1L);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            cursoService.crearCurso(nombreCurso, descripcion, 999, idCreador, idsCategorias);
+        });
+
+        assertThat(ex.getMessage()).isEqualTo("El valor del curso debe ser mayor o igual $1000");
+    }
+
+    @Test
+    @DisplayName("Crear curso con usuario creador no existente lanza excepción")
+    void testCrearCursoUsuarioNoExiste() {
+        Long idCreador = 11L;
+        String nombreCurso = "Curso";
+        String descripcion = "Desc";
+        double valorCurso = 2000;
+        Set<Long> idsCategorias = Set.of(1L);
+
+        when(usuarioValidoRepository.existsById(idCreador)).thenReturn(false);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            cursoService.crearCurso(nombreCurso, descripcion, valorCurso, idCreador, idsCategorias);
+        });
+
+        assertThat(ex.getMessage()).isEqualTo("El usuario creador no existe");
+    }
+
+    @Test
+    @DisplayName("Crear curso sin categorías asignadas asigna categoría sinCategoria automáticamente")
+    void testCrearCursoSinCategoriasAsignaSinCategoria() {
+        Long idCreador = 11L;
+        String nombreCurso = "Curso sin categoria";
+        String descripcion = "Descripcion";
+        double valorCurso = 2000;
+        Set<Long> idsCategorias = Collections.emptySet();
+
         when(usuarioValidoRepository.existsById(idCreador)).thenReturn(true);
+
+        Categoria sinCategoria = new Categoria();
+        sinCategoria.setIdCategoria(99L);
+        sinCategoria.setNombreCategoria("sinCategoria");
+
+        when(categoriaRepository.findByNombreCategoriaIgnoreCase("sinCategoria"))
+            .thenReturn(Optional.of(sinCategoria));
         when(cursoRepository.save(any(Curso.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Curso curso = cursoService.crearCurso("Curso válido", null, 2000, idCreador, Set.of());
-
-        assertThat(curso.getDescripcion()).isNull();
-    }
-
-    @Test
-    @DisplayName("Debe lanzar excepción si la descripción excede los 1000 caracteres")
-    void testCrearCursoDescripcionMuyLarga() {
-        Long idCreador = 1L;
-        when(usuarioValidoRepository.existsById(idCreador)).thenReturn(true);
-
-        String descripcionLarga = "a".repeat(1001); // 1001 caracteres
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            cursoService.crearCurso("Curso válido", descripcionLarga, 2000, idCreador, Set.of(1L));
-        });
-
-        assertThat(exception.getMessage()).isEqualTo("La descripcion no puede exceder los 1000 caracteres");
-    }
-
-    @Test
-    @DisplayName("Debe lanzar excepción si el valor del curso es menor a 1000")
-    void testCrearCursoValorMenorA1000() {
-        Long idCreador = 1L;
-        when(usuarioValidoRepository.existsById(idCreador)).thenReturn(true);
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            cursoService.crearCurso("Curso válido", "Descripción válida", 999, idCreador, Set.of(1L));
-        });
-
-        assertThat(exception.getMessage()).isEqualTo("El valor del curso debe ser mayor o igual $1000");
-    }
-
-    //TEST PARA VALIDACION DE CATEGORIA
-
-    @Test
-    @DisplayName("Debe asignar 'sinCategoria' si idsCategorias es null")
-    void testCrearCursoConIdsCategoriasNull() {
-        Long idCreador = 1L;
-        when(usuarioValidoRepository.existsById(idCreador)).thenReturn(true);
-
-        Categoria sinCategoria = new Categoria();
-        sinCategoria.setIdCategoria(99L);
-        sinCategoria.setNombreCategoria("sinCategoria");
-
-        when(categoriaRepository.findByNombreCategoriaIgnoreCase("sinCategoria"))
-            .thenReturn(Optional.of(sinCategoria));
-        when(cursoRepository.save(any(Curso.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
-
-        Curso curso = cursoService.crearCurso("Curso válido", "Descripción", 1500, idCreador, null);
-
-        assertThat(curso.getCategorias()).hasSize(1);
-        assertThat(curso.getCategorias().iterator().next().getNombreCategoria()).isEqualTo("sinCategoria");
-    }
-
-    @Test
-    @DisplayName("Debe asignar 'sinCategoria' si idsCategorias está vacío")
-    void testCrearCursoConIdsCategoriasVacio() {
-        Long idCreador = 1L;
-        when(usuarioValidoRepository.existsById(idCreador)).thenReturn(true);
-
-        Categoria sinCategoria = new Categoria();
-        sinCategoria.setIdCategoria(99L);
-        sinCategoria.setNombreCategoria("sinCategoria");
-
-        when(categoriaRepository.findByNombreCategoriaIgnoreCase("sinCategoria"))
-            .thenReturn(Optional.of(sinCategoria));
-        when(cursoRepository.save(any(Curso.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
-
-        Curso curso = cursoService.crearCurso("Curso válido", "Descripción", 1500, idCreador, Collections.emptySet());
-
-        assertThat(curso.getCategorias()).hasSize(1);
-        assertThat(curso.getCategorias().iterator().next().getNombreCategoria()).isEqualTo("sinCategoria");
-    }
-
-    //OBTENER CURSOS 
-    @DisplayName("Test para obtener curso por id")
-    @Test
-    void testObtenerCursoPorId(){
-        //Arrange
-        when(cursoRepository.findById(1L)).thenReturn(Optional.of(cursoPrueba));
-        //Act: se llama el metodo a probar
-        Optional<Curso> resultado = cursoService.obtenerCursoPorId(1L);
-
-        //Assert
-        assertThat(resultado).isNotNull();
-        assertThat(resultado.get().getIdCurso()).isEqualTo(1L);
-        
-    }
-    @DisplayName("Debe retornar vacío si el curso no existe por ID")
-    @Test
-    void testObtenerCursoPorIdNoExiste() {
-        Long idCurso = 999L;
-
-        when(cursoRepository.findById(idCurso)).thenReturn(Optional.empty());
-
-        Optional<Curso> resultado = cursoService.obtenerCursoPorId(idCurso);
-
-        assertThat(resultado).isEmpty();
-    }
-
-    @DisplayName("Test para obtener todos los cursos")
-    @Test
-    void testObtenerTodosLosCursos(){
-        //Arrange
-        when(cursoRepository.findAll()).thenReturn(listaCursos);
-
-        //Act: se llama el metodo a probar
-        List<Curso> resultado = cursoService.obtenerTodosLosCursos();
-
-        //Assert
-        assertThat(resultado).isNotNull();
-        assertEquals(2, resultado.size());
-        assertEquals("Python", resultado.get(0).getNombreCurso());
-        assertEquals("Java", resultado.get(1).getNombreCurso());
-
-        verify(cursoRepository, times(1)).findAll();
-    }
-
-    //TEST ACTUALIZAR CURSO
-    @Test
-    @DisplayName("Debe actualizar el curso si los datos son válidos y el curso existe")
-    void testActualizarCurso() {
-        Long idCurso = 1L;
-
-        Curso cursoExistente = new Curso();
-        cursoExistente.setIdCurso(idCurso);
-        cursoExistente.setNombreCurso("Antiguo");
-        cursoExistente.setDescripcion("Vieja desc");
-        cursoExistente.setValorCurso(2000);
-
-        when(cursoRepository.findById(idCurso)).thenReturn(Optional.of(cursoExistente));
-        when(cursoRepository.save(any(Curso.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        Optional<Curso> actualizado = cursoService.actualizarCurso(idCurso, "Nuevo nombre", "Nueva descripción", 2500);
-
-        assertThat(actualizado).isPresent();
-        assertThat(actualizado.get().getNombreCurso()).isEqualTo("Nuevo nombre");
-        assertThat(actualizado.get().getDescripcion()).isEqualTo("Nueva descripción");
-        assertThat(actualizado.get().getValorCurso()).isEqualTo(2500);
-    }
-
-    @Test
-    @DisplayName("Debe lanzar excepción si el nombre es nulo o vacío")
-    void testActualizarCursoNombreInvalido() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            cursoService.actualizarCurso(1L, null, "Desc", 1500);
-        });
-
-        assertThrows(IllegalArgumentException.class, () -> {
-            cursoService.actualizarCurso(1L, "   ", "Desc", 1500);
-        });
-    }
-    @DisplayName("Debe lanzar excepción si la descripción tiene más de 1000 caracteres al actualizar")
-    @Test
-    void testActualizarCursoDescripcionMuyLarga() {
-        String descripcionLarga = "a".repeat(1001);
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            cursoService.actualizarCurso(1L, "Curso válido", descripcionLarga, 1500);
-        });
-
-        assertThat(exception.getMessage()).isEqualTo("La descripcion no puede exceder los 1000 caracteres");
+        Curso resultado = cursoService.crearCurso(nombreCurso, descripcion, valorCurso, idCreador, idsCategorias);
+        assertThat(resultado.getCategorias())
+            .hasSize(1)
+            .extracting(Categoria::getNombreCategoria)
+            .containsExactly("sinCategoria");
     }
 
 
-    @Test
-    @DisplayName("Debe lanzar excepción si el valor del curso es menor a 1000")
-    void testActualizarCursoValorMenorA1000() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            cursoService.actualizarCurso(1L, "Nombre", "Descripción", 999);
-        });
-    }
 
     @DisplayName("Test para probar el método asignarInstructor correctamente para agregarlo a la lista de instructores del curso")
     @Test
@@ -498,6 +383,8 @@ public class CursoServiceTest {
         //Verificacion del mensaje
         assertThat(exception.getMessage()).isEqualTo("El curso ingresado no fue encontrado");
     }
+
+    
 
     
 

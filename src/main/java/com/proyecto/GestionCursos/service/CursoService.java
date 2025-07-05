@@ -1,6 +1,7 @@
 package com.proyecto.GestionCursos.service;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -49,13 +50,33 @@ public class CursoService {
         if(!usuarioValidoRepository.existsById(idCreador)){
             throw new IllegalArgumentException("El usuario creador no existe");
         }
+
         //Validacion de las categorias 
-        Set<Categoria> categorias = idsCategorias.stream()
-                .map(idCat -> categoriaRepository.findById(idCat)
-                    .orElseThrow(() -> new IllegalArgumentException("La categoria no existe")))
-                .collect(Collectors.toSet());
-        if (categorias.isEmpty()) {
-            throw new IllegalArgumentException("Ingrese al menos una categoria valida");
+        Set<Categoria> categorias;
+
+        if (idsCategorias == null || idsCategorias.isEmpty()) {
+            // Buscar la categoria "sinCategoria"
+            categorias = new HashSet<>();
+            Optional<Categoria> sinCatOpt = categoriaRepository.findByNombreCategoriaIgnoreCase("sinCategoria");
+            
+            Categoria sinCategoria;
+            if (sinCatOpt.isPresent()) {
+                sinCategoria = sinCatOpt.get();
+            } else {
+                // Si no existe, crearla
+                sinCategoria = new Categoria();
+                sinCategoria.setNombreCategoria("sinCategoria");
+                sinCategoria = categoriaRepository.save(sinCategoria);
+            }
+
+            categorias.add(sinCategoria);
+
+        } else {
+            // Validar categorias que llegaron
+            categorias = idsCategorias.stream()
+                    .map(idCat -> categoriaRepository.findById(idCat)
+                        .orElseThrow(() -> new IllegalArgumentException("La categoria no existe")))
+                    .collect(Collectors.toSet());
         }
 
         Curso nuevoCurso = new Curso();

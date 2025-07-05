@@ -33,11 +33,8 @@ public class ValoracionService {
         }
         if (puntuacion == null) {
             throw new IllegalArgumentException("La puntuación es obligatoria.");
+        }
 
-        }
-        if (puntuacion < 1 ||puntuacion > 6) {
-            throw new IllegalArgumentException("La puntuación debe estar entre 1 y 5.");
-        }
         if (puntuacion < 1 || puntuacion > 5) {
             throw new IllegalArgumentException("La puntuación debe estar entre 1 y 5.");
         }
@@ -114,6 +111,14 @@ public class ValoracionService {
 
         Valoracion valoracionActualizada = valoracionRepository.save(valoracionExistente);
         return Optional.of(valoracionActualizada);
+    }
+
+    @Transactional
+    public void eliminarValoracion(Long idValoracion){
+        if (!valoracionRepository.existsById(idValoracion)) {
+            throw new IllegalArgumentException("La valoracion no existe");
+        }
+        valoracionRepository.deleteById(idValoracion);
     }
 
 }

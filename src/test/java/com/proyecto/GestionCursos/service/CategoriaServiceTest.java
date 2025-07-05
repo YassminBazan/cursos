@@ -1,6 +1,7 @@
 package com.proyecto.GestionCursos.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -12,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -42,6 +44,8 @@ public class CategoriaServiceTest {
     private CategoriaService categoriaService;
 
     private Categoria categoriaProgramacion;
+    private Categoria categoriaCocina;
+    private List<Categoria> listaCategorias;
 
     //Método que se ejecuta antes de cada prueba para preparar el entorno
     @BeforeEach
@@ -53,13 +57,21 @@ public class CategoriaServiceTest {
         categoriaProgramacion = new Categoria();
         categoriaProgramacion.setIdCategoria(1L);
         categoriaProgramacion.setNombreCategoria("Programacion");
+
+        categoriaCocina = new Categoria();
+        categoriaCocina.setIdCategoria(2L);
+        categoriaCocina.setNombreCategoria("Cocina");
+
+        listaCategorias = List.of(categoriaProgramacion, categoriaCocina);
     
     }
+
+
 
     //PRUEBAS PARA EL MÉTODO CREAR CATEGORIA 
 
     //@DisplayName nos permite describir el test
-    @DisplayName("Test para guardar una categoria de forma exitosa")
+    @DisplayName("Test para guardar una categoria de forma exitosa cumpliendo con todos los requerimientos")
     @Test
     void testGuardarCategoriaOk(){
         //ARRANGE (preparar datos)
@@ -119,11 +131,30 @@ public class CategoriaServiceTest {
 
     }
 
-    //PRUEBAS PARA EL MÉTODO OBTENER CATEGORIA POR ID
+    //PRUEBA PARA OBTENER CATEGORIAS
+
+    @DisplayName("Test para obtener todas las categorias")
+    @Test
+    void testObtenerTodasLasCategorias(){
+        //Arrage: preparacion de datos
+        when(categoriaRepository.findAll()).thenReturn(listaCategorias);
+
+        //Act: se ejecuta el metodo
+        List<Categoria> resultado = categoriaService.obtenerTodasLasCategorias();
+
+        //Assert: se verifican los resultados
+        assertThat(resultado).isNotNull(); 
+        assertEquals(2, resultado.size());
+        assertEquals("Programacion", resultado.get(0).getNombreCategoria());
+        assertEquals("Cocina", resultado.get(1).getNombreCategoria());
+
+        verify(categoriaRepository, times(1)).findAll();
+
+    }
 
     @DisplayName("Test para obtener categoria por id, deberia devolver la categoria")
     @Test
-    void testObtenerCategoriaOk(){
+    void testObtenerCategoriaPorIdOk(){
         //ARRANGE : Preparacion de datos 
         when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoriaProgramacion));
         
@@ -142,52 +173,172 @@ public class CategoriaServiceTest {
         when(categoriaRepository.findById(99L)).thenReturn(Optional.empty());
         //ACCT Y ASSERT
         assertThrows(RuntimeException.class, () -> {
-            categoriaService.obtenerCategoriaPorId(99l);
+            categoriaService.obtenerCategoriaPorId(99L);
         });
     }
+
+    //TEST PARA OBTENER CATEGORIA POR NOMBRE
+    @DisplayName("Test para obtener una categoria por su nombre")
+    @Test
+    void testObtenerCategoriaPorNombre(){
+        //Arrange: preparacion de datos
+        when(categoriaRepository.findByNombreCategoriaIgnoreCase("programacion")).thenReturn((Optional.of(categoriaProgramacion)));
+
+        //Act: se llama el metodo a probar
+        Optional<Categoria> resultado = categoriaService.buscarCategoriaPorNombre("programacion");
+
+        //Assert: 
+        assertThat(resultado).isPresent();
+        assertThat(resultado.get().getNombreCategoria()).isEqualTo("Programacion");
+        verify(categoriaRepository, times(1)).findByNombreCategoriaIgnoreCase("programacion");
+    }
+
+
+    @DisplayName("Test para buscar categorias por nombre parcial (contiene texto)")
+    @Test
+    void testBuscarCategoriasPorNombre_ContieneTexto(){
+        // Arrange
+        when(categoriaRepository.findByNombreCategoriaContainingIgnoreCase("pro"))
+            .thenReturn(List.of(categoriaProgramacion));
+
+        // Act
+        List<Categoria> resultado = categoriaService.buscarCategoriasPorNombre("pro");
+
+        // Assert
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.get(0).getNombreCategoria()).containsIgnoringCase("pro");
+        verify(categoriaRepository, times(1)).findByNombreCategoriaContainingIgnoreCase("pro");
+    }
+    //ACTUALIZAR CATEGORIA
+    @DisplayName("Test para actualizar una categoría exitosamente")
+    @Test
+    void testActualizarCategoriaOk() {
+        // Arrange
+        Long idCategoria = 1L;
+        String nuevoNombre = "Ciencia";
+
+        when(categoriaRepository.findById(idCategoria)).thenReturn(Optional.of(categoriaProgramacion));
+        when(categoriaRepository.findByNombreCategoriaIgnoreCase(nuevoNombre)).thenReturn(Optional.empty());
+        when(categoriaRepository.save(any(Categoria.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        Categoria resultado = categoriaService.actualizarCategoria(idCategoria, nuevoNombre);
+
+        // Assert
+        assertThat(resultado).isNotNull();
+        assertThat(resultado.getNombreCategoria()).isEqualTo(nuevoNombre);
+        verify(categoriaRepository).save(categoriaProgramacion);
+    }
+
+    @DisplayName("Test para actualizar categoría con nombre vacío")
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "\n", "\t"})
+    void testActualizarCategoriaNombreInvalido(String nombreInvalido) {
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            categoriaService.actualizarCategoria(1L, nombreInvalido);
+        });
+        assertThat(exception.getMessage()).isEqualTo("El nuevo nombre no puede estar vacio");
+
+        verify(categoriaRepository, never()).save(any(Categoria.class));
+    }
+
+    @DisplayName("Test para actualizar categoría con ID que no existe")
+    @Test
+    void testActualizarCategoriaIdInexistente() {
+        // Arrange
+        when(categoriaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            categoriaService.actualizarCategoria(99L, "NuevaCategoria");
+        });
+        assertThat(exception.getMessage()).isEqualTo("El id ingresado no coincide con ninguna categoria");
+
+        verify(categoriaRepository, never()).save(any(Categoria.class));
+    }
+
+    @DisplayName("Test para actualizar categoría con nombre que ya tiene otra categoría")
+    @Test
+    void testActualizarCategoriaNombreDuplicado() {
+        // Arrange
+        Long idCategoria = 1L;
+        String nombreDuplicado = "Cocina"; // categoríaCocina tiene este nombre y un ID diferente
+
+        when(categoriaRepository.findById(idCategoria)).thenReturn(Optional.of(categoriaProgramacion));
+        when(categoriaRepository.findByNombreCategoriaIgnoreCase(nombreDuplicado))
+            .thenReturn(Optional.of(categoriaCocina)); // ID diferente al que se está actualizando
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            categoriaService.actualizarCategoria(idCategoria, nombreDuplicado);
+        });
+        assertThat(exception.getMessage()).isEqualTo("El nombre de la categoria ya existe");
+
+        verify(categoriaRepository, never()).save(any(Categoria.class));
+    }
+
 
     //PRUEBAS PARA ELIMINAR CATEGORIA
-    @DisplayName("Test para cuando se elimine una categoria primero debe desvincular los cursos asociados")
+    @DisplayName("Test para eliminar categoría con cursos asociados")
     @Test
-    void testEliminarCategoria(){
-        //ARRANGE 
-        Long idAEliminar = 1L;
-        Curso cursoAsociado = new Curso(); //Se crea un curso de prueba
-        //Se utiliza un HashSet mutable para verificar la eliminacion
-        cursoAsociado.setCategorias(new HashSet<>(Arrays.asList(categoriaProgramacion)));
+    void testEliminarCategoriaConCursosAsociados() {
+        Long categoriaId = 1L;
 
-        when(categoriaRepository.findById(idAEliminar)).thenReturn(Optional.of(categoriaProgramacion));
-        when(cursoRepository.findByCategorias_IdCategoria(idAEliminar)).thenReturn(List.of(cursoAsociado));
+        when(categoriaRepository.findById(categoriaId)).thenReturn(Optional.of(categoriaProgramacion));
 
-        //ACT 
-        categoriaService.eliminarCategoria(idAEliminar);
+        Curso cursoAsociado = new Curso();
+        cursoAsociado.setIdCurso(10L);
 
-        //ASSERT: Se verifica que el curso se guardo 
+        Set<Categoria> categorias = new HashSet<>();
+        categorias.add(categoriaProgramacion); // categoriaProgramacion.getIdCategoria() == 1L en setUp()
+        cursoAsociado.setCategorias(categorias);
+
+        when(cursoRepository.findByCategorias_IdCategoria(categoriaId)).thenReturn(List.of(cursoAsociado));
+
+        categoriaService.eliminarCategoria(categoriaId);
+
+        // Aquí el removeIf eliminará categoriaProgramacion, removed será true y se llamará a save
         verify(cursoRepository, times(1)).save(cursoAsociado);
-        //Verificamos que la categoria fue eliminada
         verify(categoriaRepository, times(1)).delete(categoriaProgramacion);
-        //Verificamos que la coleecion de categorias esta vacia
-        assertThat(cursoAsociado.getCategorias()).isEmpty();
+
+        assertThat(cursoAsociado.getCategorias()).doesNotContain(categoriaProgramacion);
     }
 
-    @DisplayName("Test para eliminar una categoria que no existe")
-    @Test 
-    void testEliminarCategoriaFail(){
-        //Arrange 
-        Long idCategoriaFake = 100L;
 
-        //Simulamos que la categoria no existe
-        when(categoriaRepository.existsById(idCategoriaFake)).thenReturn(false);
+    @DisplayName("Test para eliminar categoría sin cursos asociados")
+    @Test
+    void testEliminarCategoriaSinCursosAsociados() {
+        // Arrange
+        Long idCategoria = 1L;
 
-        //Verificamos la excepcion
+        when(categoriaRepository.findById(idCategoria)).thenReturn(Optional.of(categoriaProgramacion));
+        when(cursoRepository.findByCategorias_IdCategoria(idCategoria)).thenReturn(List.of());
+
+        // Act
+        categoriaService.eliminarCategoria(idCategoria);
+
+        // Assert
+        verify(cursoRepository, never()).save(any(Curso.class));
+        verify(categoriaRepository, times(1)).delete(categoriaProgramacion);
+    }
+
+    @DisplayName("Test para eliminar categoría inexistente lanza excepción")
+    @Test
+    void testEliminarCategoriaNoExiste() {
+        // Arrange
+        Long idCategoria = 99L;
+        when(categoriaRepository.findById(idCategoria)).thenReturn(Optional.empty());
+
+        // Act & Assert
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            categoriaService.eliminarCategoria(idCategoriaFake);
+            categoriaService.eliminarCategoria(idCategoria);
         });
 
-        //Verificacion del mensaje 
         assertThat(exception.getMessage()).isEqualTo("Categoría no encontrada");
+
+        verify(cursoRepository, never()).save(any());
+        verify(categoriaRepository, never()).delete(any());
     }
-
-
-
 }
